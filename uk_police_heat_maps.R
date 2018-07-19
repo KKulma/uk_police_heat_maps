@@ -6,7 +6,12 @@ library(ggplot2)
 library(jsonlite)
 library(lubridate)
 library(stringr)
+library(viridis)
+library(leaflet)
+library(leaflet.extras)
+library(htmltools)
 
+#install.packages('leaflet.extras')
 
 ### scraping with rvest() ####
 
@@ -135,6 +140,80 @@ ggplot(police_grid,aes(x=date,y=location, fill=n_crimes))+
     panel.border=element_blank()
   ) +
   guides(fill=guide_legend(title="Number of crimes"))
+
+
+### GEO HEATMAPS ####
+#### 1 MONTH DATA: BASIC HEATMAP ####
+final_df %>% 
+  leaflet() %>%
+  addProviderTiles(providers$CartoDB.Positron) %>%
+  # addMarkers(lng = ~as.numeric(location.longitude),
+  #           lat = ~as.numeric(location.latitude),
+  #           popup = paste("Distance:", police_data_json$dist, "<br>",
+  #                         "Crime:", police_data_json$category, "<br>",
+  #                         "Month", police_data_json$month, "<br>"),
+  #           label = ~as.character(dist)) %>% 
+  # addCircleMarkers(~as.numeric(location.longitude),
+  #             ~as.numeric(location.latitude),
+  #             label = lapply(labs, HTML),
+  #             fillColor = ~pal(id),
+  #             stroke = FALSE, fillOpacity = 0.8#,
+#            clusterOptions = markerClusterOptions()#, # adds summary circles
+# popup = ~htmlEscape(category)
+#  ) %>% 
+addHeatmap(lng=~as.numeric(location.longitude), lat=~as.numeric(location.latitude), radius = 8)#, blur = 10)
+
+
+#### 1 MONTH DATA: BASIC HEATMAP + CLUSTERS ####
+
+color_scheme <- viridis::cividis(n_distinct(final_df$category))
+pal = colorFactor(color_scheme, final_df$category)
+
+
+final_df %>% 
+  leaflet() %>%
+  addProviderTiles(providers$CartoDB.Positron) %>%
+  # addMarkers(lng = ~as.numeric(location.longitude),
+  #           lat = ~as.numeric(location.latitude),
+  #           popup = paste("Distance:", police_data_json$dist, "<br>",
+  #                         "Crime:", police_data_json$category, "<br>",
+  #                         "Month", police_data_json$month, "<br>"),
+  #           label = ~as.character(dist)) %>% 
+  addCircleMarkers(~as.numeric(location.longitude),
+                   ~as.numeric(location.latitude),
+                   #label = lapply(labs, HTML),
+                   fillColor = ~pal(category),
+                   stroke = FALSE, fillOpacity = 0.8,
+                   clusterOptions = markerClusterOptions(), # adds summary circles
+                   popup = ~as.character(category)
+  ) %>% 
+  addHeatmap(lng=~as.numeric(location.longitude), lat=~as.numeric(location.latitude), radius = 8)#, blur = 10)
+
+
+
+
+#### 1 MONTH DATA: BASIC HEATMAP + CLUSTERS + MORE ELABORATE LABELS ####
+final_df %>% 
+  leaflet() %>%
+  addProviderTiles(providers$CartoDB.Positron) %>%
+  addMarkers(lng = ~long,
+             lat = lat,
+             #           popup = paste("Distance:", police_data_json$dist, "<br>",
+             #                         "Crime:", police_data_json$category, "<br>",
+             #                         "Month", police_data_json$month, "<br>"),
+             label = "Search Location") %>% 
+  addCircleMarkers(~as.numeric(location.longitude),
+                   ~as.numeric(location.latitude),
+                   #label = lapply(labs, HTML),
+                   fillColor = ~pal(category),
+                   stroke = FALSE, fillOpacity = 0.8,
+                   clusterOptions = markerClusterOptions(), # adds summary circles
+                   popup = paste(#"Distance:", police_data_json$dist, "m <br>",
+                                 "Crime:", police_data_json$category, "<br>",
+                                 "Month", police_data_json$month, "<br>")
+  ) %>% 
+  addHeatmap(lng=~as.numeric(location.longitude), lat=~as.numeric(location.latitude), radius = 8)#, blur = 10)
+
 
 
 
