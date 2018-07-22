@@ -96,19 +96,30 @@ for(i in 1:length(iter_months)){
 glimpse(final_df)
 table(final_df$location, final_df$month)
 
-saveRDS(final_df, "20180719-final-police-df-Jan16-May18")
+saveRDS(final_df, "20180719-final-police-df-Jan16-May18.rds")
+final_df <- readRDS("20180719-final-police-df-Jan16-May18.rds")
+
+final_df <- final_df %>% 
+  left_join(wiki_sample, by = c("location" = "name")) %>% 
+   rename(date = month,
+          search_lat = lat,
+          search_long = long)
+
+july_data <- final_df %>%
+  filter(date == "2017-07")
+
 
 police_grid <- final_df %>%
-  rename(date = month) %>% 
   unique() %>% 
   #mutate(year = year(as.yearmon(date)),
   #year = paste(year(as.yearmon(date)),month(as.yearmon(date)), sep="."),
   #       month = month(as.yearmon(date))) %>% 
   #select(category, id, date, month, year) %>% 
   group_by(location, date) %>% 
-  summarise(n_crimes = n_distinct(id))
+  summarise(n_crimes = n())
 
 
+### tiled heat map of all crimes ####
 ggplot(police_grid,aes(x=date,y=location, fill=n_crimes))+
   #add border white colour of line thickness 0.25
   geom_tile(colour="white",size=0.25)+
@@ -142,9 +153,51 @@ ggplot(police_grid,aes(x=date,y=location, fill=n_crimes))+
   guides(fill=guide_legend(title="Number of crimes"))
 
 
+### tiled heat map of types of crimes per area ####
+
+crime_grid <- final_df %>% 
+  group_by(location, category) %>% 
+  summarise(n_crimes = n())
+
+glimpse(crime_grid)
+
+ggplot(crime_grid,aes(x=category,y=location, fill=n_crimes))+
+  #add border white colour of line thickness 0.25
+  geom_tile(colour="white",size=0.25)+
+  #remove x and y axis labels
+  labs(x="",y="")+
+  #remove extra space
+  scale_y_discrete(expand=c(0,0))+
+  #define new breaks on x-axis
+  #scale_x_discrete(expand=c(0,0), 
+  #                 breaks=c("2016-01","2017-01", "2018-01"))+
+  #one unit on x-axis is equal to one unit on y-axis.
+  #maintains aspect ratio.
+  scale_fill_viridis(option = "B") +
+#  ggtitle("Number of crimes at London Tube stations") +
+  coord_fixed()+
+  #set a base size for all fonts
+  theme_grey(base_size=8)+
+  #theme options
+  theme(
+    # vertical labels on x axis
+    axis.text.x = element_text(angle = 90, hjust = 1),
+    #bold font for both axis text
+    axis.text=element_text(face="bold"),
+    #set thickness of axis ticks
+    axis.ticks=element_line(size=0.4),
+    #remove plot background
+    plot.background=element_blank(),
+    #remove plot border
+    panel.border=element_blank()
+  ) +
+  guides(fill=guide_legend(title="Number of crimes"))
+
+
+
 ### GEO HEATMAPS ####
 #### 1 MONTH DATA: BASIC HEATMAP ####
-final_df %>% 
+july_data %>% 
   leaflet() %>%
   addProviderTiles(providers$CartoDB.Positron) %>%
   # addMarkers(lng = ~as.numeric(location.longitude),
@@ -166,11 +219,13 @@ addHeatmap(lng=~as.numeric(location.longitude), lat=~as.numeric(location.latitud
 
 #### 1 MONTH DATA: BASIC HEATMAP + CLUSTERS ####
 
-color_scheme <- viridis::cividis(n_distinct(final_df$category))
-pal = colorFactor(color_scheme, final_df$category)
+color_scheme <- viridis::cividis(n_distinct(july_data$category))
+pal = colorFactor(color_scheme, july_data$category)
+str(july_data)
 
 
-final_df %>% 
+
+july_data %>% 
   leaflet() %>%
   addProviderTiles(providers$CartoDB.Positron) %>%
   # addMarkers(lng = ~as.numeric(location.longitude),
@@ -193,11 +248,13 @@ final_df %>%
 
 
 #### 1 MONTH DATA: BASIC HEATMAP + CLUSTERS + MORE ELABORATE LABELS ####
-final_df %>% 
+glimpse(july_data)
+
+july_data %>% 
   leaflet() %>%
   addProviderTiles(providers$CartoDB.Positron) %>%
-  addMarkers(lng = ~long,
-             lat = lat,
+  addMarkers(lng = ~as.numeric(search_long),
+             lat = ~as.numeric(search_lat),
              #           popup = paste("Distance:", police_data_json$dist, "<br>",
              #                         "Crime:", police_data_json$category, "<br>",
              #                         "Month", police_data_json$month, "<br>"),
@@ -209,8 +266,8 @@ final_df %>%
                    stroke = FALSE, fillOpacity = 0.8,
                    clusterOptions = markerClusterOptions(), # adds summary circles
                    popup = paste(#"Distance:", police_data_json$dist, "m <br>",
-                                 "Crime:", police_data_json$category, "<br>",
-                                 "Month", police_data_json$month, "<br>")
+                                 "Crime:", july_data$category, "<br>",
+                                 "Month", july_data$month, "<br>")
   ) %>% 
   addHeatmap(lng=~as.numeric(location.longitude), lat=~as.numeric(location.latitude), radius = 8)#, blur = 10)
 
