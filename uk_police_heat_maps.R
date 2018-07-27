@@ -195,6 +195,9 @@ ggplot(crime_grid,aes(x=category,y=location, fill=n_crimes))+
 
 
 
+
+
+
 ### GEO HEATMAPS ####
 #### 1 MONTH DATA: BASIC HEATMAP ####
 july_data %>% 
@@ -258,7 +261,7 @@ july_data %>%
              #           popup = paste("Distance:", police_data_json$dist, "<br>",
              #                         "Crime:", police_data_json$category, "<br>",
              #                         "Month", police_data_json$month, "<br>"),
-             label = "Search Location") %>% 
+             label = ~location) %>% 
   addCircleMarkers(~as.numeric(location.longitude),
                    ~as.numeric(location.latitude),
                    #label = lapply(labs, HTML),
@@ -269,6 +272,73 @@ july_data %>%
                                  "Crime:", july_data$category, "<br>",
                                  "Month", july_data$month, "<br>")
   ) %>% 
+  addHeatmap(lng=~as.numeric(location.longitude), lat=~as.numeric(location.latitude), radius = 8)#, blur = 10)
+
+
+
+#### 1 MONTH DATA: BASIC HEATMAP + CUSTOM MARKERS  ####
+glimpse(july_data)
+
+# pick top 3 most 'criminal' areas
+??top_n
+
+top_3 <- police_grid %>% 
+  filter(date == '2017-07') %>% 
+  ungroup() %>% 
+  top_n(3)
+
+
+
+### marker icons ####
+
+robber_icon <- 'https://www.freeiconspng.com/uploads/face-mafia-robbery-thief-violation-icon--6.png'
+robber_icon2 <- 'https://www.shareicon.net/data/128x128/2015/10/31/664860_people_512x512.png'
+tube_icon <- 'https://www.shareicon.net/data/128x128/2016/02/02/712554_shapes_512x512.png'
+train_icon <- 'https://png.icons8.com/ios-glyphs/1600/train.png'
+police_icon <- 'https://png.icons8.com/metro/1600/policeman-male.png'
+
+policeIcons <- icons(
+  iconUrl = ifelse(july_data$location %in% top_3$location,
+                   police_icon,
+                   train_icon
+
+                   
+                                      # "icons/crime.png",
+                   # "icons/train.png"
+                   
+                   # robber_icon2,
+                  # tube_icon
+  ),
+  iconWidth = 24, iconHeight = 24#,
+  #iconAnchorX = 22, iconAnchorY = 94
+)
+
+policeIcons2 <- iconList(
+  train = makeIcon("icons/train2.png", 18, 18),
+  crime = makeIcon("icons/crime2.png", 24, 24)
+)
+
+
+july_data %>% 
+  leaflet() %>%
+  addProviderTiles(providers$CartoDB.Positron) %>%
+  addMarkers(lng = ~as.numeric(search_long),
+             lat = ~as.numeric(search_lat),
+             #           popup = paste("Distance:", police_data_json$dist, "<br>",
+             #                         "Crime:", police_data_json$category, "<br>",
+             #                         "Month", police_data_json$month, "<br>"),
+             label = ~location,
+             icon = policeIcons) %>% 
+  # addCircleMarkers(~as.numeric(location.longitude),
+  #                  ~as.numeric(location.latitude),
+  #                  #label = lapply(labs, HTML),
+  #                  fillColor = ~pal(category),
+  #                  stroke = FALSE, fillOpacity = 0.8,
+  #                  clusterOptions = markerClusterOptions(), # adds summary circles
+  #                  popup = paste(#"Distance:", police_data_json$dist, "m <br>",
+  #                    "Crime:", july_data$category, "<br>",
+  #                    "Month", july_data$month, "<br>")
+  #) %>% 
   addHeatmap(lng=~as.numeric(location.longitude), lat=~as.numeric(location.latitude), radius = 8)#, blur = 10)
 
 
