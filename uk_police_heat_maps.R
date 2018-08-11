@@ -112,17 +112,13 @@ july_data <- final_df %>%
   filter(date == "2017-07")
 
 
+
+### tiled heat map of all crimes ####
 police_grid <- final_df %>%
   unique() %>% 
-  #mutate(year = year(as.yearmon(date)),
-  #year = paste(year(as.yearmon(date)),month(as.yearmon(date)), sep="."),
-  #       month = month(as.yearmon(date))) %>% 
-  #select(category, id, date, month, year) %>% 
   group_by(location, date) %>% 
   summarise(n_crimes = n())
 
-
-### tiled heat map of all crimes ####
 ggplot(police_grid,aes(x=date,y=location, fill=n_crimes))+
   #add border white colour of line thickness 0.25
   geom_tile(colour="white",size=0.25)+
@@ -259,10 +255,9 @@ july_data %>%
 #### 1 MONTH DATA: BASIC HEATMAP + CUSTOM MARKERS  ####
 glimpse(july_data)
 
-#### 1 MONTH DATA: BASIC HEATMAP + CLUSTERS + MORE ELABORATE LABELS ####
-## takes long to load - give up on clusters 
+#### 1 MONTH DATA: BASIC HEATMAP + LABELS ####
 
-glimpse(july_data)
+#glimpse(july_data)
 
 july_data %>% 
   leaflet() %>%
