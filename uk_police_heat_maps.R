@@ -75,7 +75,7 @@ glimpse(triple_test)
 glimpse(bind_rows(triple_test))
 
 # mutli-loation multi-month test ####
-iter_months <- str_sub(seq(ymd('2016-01-01'),ymd('2018-05-20'), by = 'month'), start = 1, end = 7)
+iter_months <- str_sub(seq(ymd('2016-01-01'),ymd('2018-06-20'), by = 'month'), start = 1, end = 7)
 
 #sample_grid <- expand.grid(name = wiki_sample$name, date = iter_months) %>% 
 #  inner_join(wiki_sample)
@@ -96,8 +96,11 @@ for(i in 1:length(iter_months)){
 glimpse(final_df)
 table(final_df$location, final_df$month)
 
-saveRDS(final_df, "20180719-final-police-df-Jan16-May18.rds")
-final_df <- readRDS("20180719-final-police-df-Jan16-May18.rds")
+#saveRDS(final_df, "20180719-final-police-df-Jan16-May18.rds")
+#final_df <- readRDS("20180719-final-police-df-Jan16-May18.rds")
+
+saveRDS(final_df, "20180719-final-police-df-Jan16-June18.rds")
+final_df <- readRDS("20180719-final-police-df-Jan16-June18.rds")
 
 final_df <- final_df %>% 
   left_join(wiki_sample, by = c("location" = "name")) %>% 
@@ -181,7 +184,7 @@ ggplot(crime_grid,aes(x=category,y=location, fill=n_crimes))+
   #theme options
   theme(
     # vertical labels on x axis
-    axis.text.x = element_text(angle = 90, hjust = 1),
+    axis.text.x = element_text(angle = 45, hjust = 1),
     #bold font for both axis text
     axis.text=element_text(face="bold"),
     #set thickness of axis ticks
@@ -203,21 +206,7 @@ ggplot(crime_grid,aes(x=category,y=location, fill=n_crimes))+
 july_data %>% 
   leaflet() %>%
   addProviderTiles(providers$CartoDB.Positron) %>%
-  # addMarkers(lng = ~as.numeric(location.longitude),
-  #           lat = ~as.numeric(location.latitude),
-  #           popup = paste("Distance:", police_data_json$dist, "<br>",
-  #                         "Crime:", police_data_json$category, "<br>",
-  #                         "Month", police_data_json$month, "<br>"),
-  #           label = ~as.character(dist)) %>% 
-  # addCircleMarkers(~as.numeric(location.longitude),
-  #             ~as.numeric(location.latitude),
-  #             label = lapply(labs, HTML),
-  #             fillColor = ~pal(id),
-  #             stroke = FALSE, fillOpacity = 0.8#,
-#            clusterOptions = markerClusterOptions()#, # adds summary circles
-# popup = ~htmlEscape(category)
-#  ) %>% 
-addHeatmap(lng=~as.numeric(location.longitude), lat=~as.numeric(location.latitude), radius = 8)#, blur = 10)
+  addHeatmap(lng=~as.numeric(location.longitude), lat=~as.numeric(location.latitude), radius = 8)#, blur = 10)
 
 
 #### 1 MONTH DATA: BASIC HEATMAP + CLUSTERS ####
@@ -231,15 +220,8 @@ str(july_data)
 july_data %>% 
   leaflet() %>%
   addProviderTiles(providers$CartoDB.Positron) %>%
-  # addMarkers(lng = ~as.numeric(location.longitude),
-  #           lat = ~as.numeric(location.latitude),
-  #           popup = paste("Distance:", police_data_json$dist, "<br>",
-  #                         "Crime:", police_data_json$category, "<br>",
-  #                         "Month", police_data_json$month, "<br>"),
-  #           label = ~as.character(dist)) %>% 
   addCircleMarkers(~as.numeric(location.longitude),
                    ~as.numeric(location.latitude),
-                   #label = lapply(labs, HTML),
                    fillColor = ~pal(category),
                    stroke = FALSE, fillOpacity = 0.8,
                    clusterOptions = markerClusterOptions(), # adds summary circles
@@ -251,6 +233,8 @@ july_data %>%
 
 
 #### 1 MONTH DATA: BASIC HEATMAP + CLUSTERS + MORE ELABORATE LABELS ####
+## takes long to load - give up on clusters 
+
 glimpse(july_data)
 
 july_data %>% 
@@ -258,17 +242,13 @@ july_data %>%
   addProviderTiles(providers$CartoDB.Positron) %>%
   addMarkers(lng = ~as.numeric(search_long),
              lat = ~as.numeric(search_lat),
-             #           popup = paste("Distance:", police_data_json$dist, "<br>",
-             #                         "Crime:", police_data_json$category, "<br>",
-             #                         "Month", police_data_json$month, "<br>"),
              label = ~location) %>% 
   addCircleMarkers(~as.numeric(location.longitude),
                    ~as.numeric(location.latitude),
-                   #label = lapply(labs, HTML),
                    fillColor = ~pal(category),
                    stroke = FALSE, fillOpacity = 0.8,
                    clusterOptions = markerClusterOptions(), # adds summary circles
-                   popup = paste(#"Distance:", police_data_json$dist, "m <br>",
+                   popup = paste(
                                  "Crime:", july_data$category, "<br>",
                                  "Month", july_data$month, "<br>")
   ) %>% 
@@ -279,8 +259,22 @@ july_data %>%
 #### 1 MONTH DATA: BASIC HEATMAP + CUSTOM MARKERS  ####
 glimpse(july_data)
 
+#### 1 MONTH DATA: BASIC HEATMAP + CLUSTERS + MORE ELABORATE LABELS ####
+## takes long to load - give up on clusters 
+
+glimpse(july_data)
+
+july_data %>% 
+  leaflet() %>%
+  addProviderTiles(providers$CartoDB.Positron) %>%
+  addMarkers(lng = ~as.numeric(search_long),
+             lat = ~as.numeric(search_lat),
+             label = ~location) %>% 
+  addHeatmap(lng=~as.numeric(location.longitude), lat=~as.numeric(location.latitude), radius = 8)#, blur = 10)
+
+
+
 # pick top 3 most 'criminal' areas
-??top_n
 
 top_3 <- police_grid %>% 
   filter(date == '2017-07') %>% 
@@ -300,23 +294,14 @@ police_icon <- 'https://png.icons8.com/metro/1600/policeman-male.png'
 policeIcons <- icons(
   iconUrl = ifelse(july_data$location %in% top_3$location,
                    police_icon,
-                   train_icon
-
-                   
-                                      # "icons/crime.png",
-                   # "icons/train.png"
-                   
-                   # robber_icon2,
-                  # tube_icon
-  ),
-  iconWidth = 24, iconHeight = 24#,
-  #iconAnchorX = 22, iconAnchorY = 94
+                   tube_icon),
+  iconWidth = 30, iconHeight = 30
 )
 
-policeIcons2 <- iconList(
-  train = makeIcon("icons/train2.png", 18, 18),
-  crime = makeIcon("icons/crime2.png", 24, 24)
-)
+# policeIcons2 <- iconList(
+#   train = makeIcon("icons/train2.png", 18, 18),
+#   crime = makeIcon("icons/crime2.png", 24, 24)
+# )
 
 
 july_data %>% 
@@ -324,21 +309,8 @@ july_data %>%
   addProviderTiles(providers$CartoDB.Positron) %>%
   addMarkers(lng = ~as.numeric(search_long),
              lat = ~as.numeric(search_lat),
-             #           popup = paste("Distance:", police_data_json$dist, "<br>",
-             #                         "Crime:", police_data_json$category, "<br>",
-             #                         "Month", police_data_json$month, "<br>"),
              label = ~location,
              icon = policeIcons) %>% 
-  # addCircleMarkers(~as.numeric(location.longitude),
-  #                  ~as.numeric(location.latitude),
-  #                  #label = lapply(labs, HTML),
-  #                  fillColor = ~pal(category),
-  #                  stroke = FALSE, fillOpacity = 0.8,
-  #                  clusterOptions = markerClusterOptions(), # adds summary circles
-  #                  popup = paste(#"Distance:", police_data_json$dist, "m <br>",
-  #                    "Crime:", july_data$category, "<br>",
-  #                    "Month", july_data$month, "<br>")
-  #) %>% 
   addHeatmap(lng=~as.numeric(location.longitude), lat=~as.numeric(location.latitude), radius = 8)#, blur = 10)
 
 
